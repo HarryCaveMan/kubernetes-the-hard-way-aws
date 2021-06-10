@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Security Groups for our Kubernetes cluster
+
+Parameters:
+  VpcId:
+    Description: The ID of the VPC these Security Groups will be used in
+    Type: String
+
+  
+Resources:
+  NodeSecurityGroup:
+    Description: Security Group (like firewall rules) for our load balancer
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: kubernetes
+      VpcId: !Ref VpcId
+      Tags: 
+        - Key: Name
+          Value: kubernetes-the-hard-way
+      SecurityGroupIngress:
+        - FromPort: -1
+          ToPort: -1
+          IpProtocol: icmp
+          CidrIp: '0.0.0.0/0'
+        - FromPort: 22
+          ToPort: 22
+          IpProtocol: tcp
+          CidrIp: '0.0.0.0/0'
+        - FromPort: 443
+          ToPort: 443
+          IpProtocol: tcp
+          CidrIp: '0.0.0.0/0'
+        - FromPort: 6443
+          ToPort: 6443
+          IpProtocol: tcp
+          CidrIp: '0.0.0.0/0'
+        - FromPort: -1
+          ToPort: -1
+          IpProtocol: -1
+          CidrIp: '10.200.0.0/16'
+        - FromPort: -1
+          ToPort: -1
+          IpProtocol: -1
+          CidrIp: '10.0.0.0/16'
+          
+
+Outputs:
+  NodeSecurityGroup:
+    Description: The security group for the gateway(which happens to be an nlb)
+    Value: !Ref NlbSecurityGroup

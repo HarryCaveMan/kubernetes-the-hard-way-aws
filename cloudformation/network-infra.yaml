@@ -1,0 +1,52 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Network infrastructure for our cluster
+
+
+Parameters:
+
+
+Resources:
+  KubernetesVpc:
+    Description: 
+    Type: AWS::EC2::VPC
+    Properties: 
+      CidrBlock: 0.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags: 
+        - Key: Name
+          Value: kubernetes-the-hard-way
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties: 
+      Tags: 
+        - Key: Name
+          Value: kubernetes-the-hard-way
+
+  IgwVpcAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties: 
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref KubernetesVpc
+
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      Tags: 
+        - Key: Name
+          Value: kubernetes-the-hard-way
+      VpcId: !Ref KubernetesVpc
+
+  IgwVpcRoute:
+    Type: AWS::EC2::Route
+    Properties: 
+      DestinationCidrBlock:  0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref RouteTable
+
+  
+Outputs:
+  VpcId:
+    Description: VPC ID for our kubernetes-the-hard-way VPC
+    Value: !Ref KubernetesVpc

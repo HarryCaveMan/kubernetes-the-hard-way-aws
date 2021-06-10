@@ -1,0 +1,59 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Load balancer resources (NLB, Listener, TargetGroup)
+
+
+Parameters:
+  VpcId:
+    Description:
+      The id of the VPC we're deploying our Network Load Balancer (nlb) to
+      Type: String
+  SubnetIds:
+    Description: The ID of the subnet these Security Groups will be used in
+    Type: CommaDelimitedList
+
+
+Resources:
+  LoadBalancer:
+    Description: The network load balancer
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: kubernetes
+      Subnets: !Ref SubnetIds
+      Scheme: internet-facing
+      Type: Network
+      Tags: 
+        - Key: Name
+          Value: kubernetes-the-hard-way
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties: 
+      Name: kubernetes
+      Port: 6443
+      Protocol: TCP
+      Tags: 
+        - Key: Name
+          Value: kubernetes-the-hard-way
+      Targets: 
+        - Id: 10.0.1.1{0,1,2}        
+      TargetType: ip
+      VpcId: !Ref VpcId
+
+  Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties: 
+      DefaultActions: 
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 443
+      Protocol: TCP
+
+
+Outputs:
+  TargetGroup:
+    Description: The ARN of the TargetGroup
+    Value: !Ref TargetGroup
+  LoadBalancerDns:
+    Description: Public DNS of the Nlb
+    Value: !GetAtt LoadBalancer.DNSName

@@ -1,0 +1,8 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: 3 Node Cluster in a VPC with a Network Load balancer to host our kubernetes application
+
+Parameters:
+
+Resources:
+
+Outputs:

@@ -4,7 +4,6 @@ Description: Network infrastructure for our cluster
 
 Parameters:
 
-
 Resources:
   KubernetesVpc:
     Description: 

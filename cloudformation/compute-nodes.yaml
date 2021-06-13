@@ -2,7 +2,60 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description: Template for Kubernetes Compute Nodes
 
 Parameters:
+  TargetGroupArns:
+    Type: CommaDelimitedList
+    Description: The arn of the Load Balancer TargetGroup to attach to our nodes
+  NetworkInterfaces:
+    Type: CommaDelimitedList
+    Description: The network interfaces to attach to this node groups to maintain same ipv4 as the tutorial
+  PlacementGroup:
+    Type: String
+    Description: Placement group for all nodes in out kube cluster (worker and control plane)
+  AmiId:
+    Type: String
+    Description: The Amazon Machine Image (AMI) ID to use (this is the entire OS image)
+  NodeType:
+    Type: String
+    Description: Node type, must be admin|worker
+    AllowedValues:
+      - admin
+      - worker
 
 Resources:
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+  Properties: 
+    LaunchTemplateData: 
+      LaunchTemplateName: !Sub kubernetes-${NodeType}-node
+      ImageId: !Ref AmiId
+      BlockDeviceMappings: 
+      - DeviceName: /dev/sda1 
+        Ebs: 
+          VolumeSize: 50 
+        NoDevice: ''  
+      EbsOptimized: true
+      InstanceType: t3.micro
+      KeyName: !Ref KeyName
+      Placement:
+        GroupName: !Ref PlacementGroup
+      NetworkInterfaces: !Ref NetworkInterfaces
+      SecurityGroupIds: !Ref SecurityGroups
+      UserData: String
+
+  NodeGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties: 
+      AutoScalingGroupName: kubernetes-nodes
+      AvailabilityZones: 
+        - us-east-1
+      PlacementGroup: !Ref PlacementGroup
+      DesiredCapacity: '3'
+      LaunchTemplate: 
+        LaunchTemplateSpecification
+      MaxSize: '3'
+      MinSize: '3'
+      Tags: 
+        - Key: Name
+          Value: kubernetes-the-hard-way
 
 Outputs:

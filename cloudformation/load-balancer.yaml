@@ -34,9 +34,6 @@ Resources:
       Tags: 
         - Key: Name
           Value: kubernetes-the-hard-way
-      Targets: 
-        - Id: 10.0.1.1{0,1,2}        
-      TargetType: ip
       VpcId: !Ref VpcId
 
   Listener:

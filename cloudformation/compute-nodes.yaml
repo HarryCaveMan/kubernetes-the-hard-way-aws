@@ -5,9 +5,6 @@ Parameters:
   TargetGroupArns:
     Type: CommaDelimitedList
     Description: The arn of the Load Balancer TargetGroup to attach to our nodes
-  NetworkInterfaces:
-    Type: CommaDelimitedList
-    Description: The network interfaces to attach to this node groups to maintain same ipv4 as the tutorial
   PlacementGroup:
     Type: String
     Description: Placement group for all nodes in out kube cluster (worker and control plane)
@@ -16,10 +13,14 @@ Parameters:
     Description: The Amazon Machine Image (AMI) ID to use (this is the entire OS image)
   NodeType:
     Type: String
-    Description: Node type, must be admin|worker
+    Description: Node type, must be controller|worker
     AllowedValues:
-      - admin
+      - controller
       - worker
+
+Conditions:
+  IsController:
+    !Equals [!Ref NodeType,controller]
 
 Resources:
   LaunchTemplate:
@@ -31,16 +32,35 @@ Resources:
       BlockDeviceMappings: 
       - DeviceName: /dev/sda1 
         Ebs: 
-          VolumeSize: 50 
+          VolumeSize: 50
+          VolumeType: gp3
+          Iops: 3000
         NoDevice: ''  
       EbsOptimized: true
       InstanceType: t3.micro
       KeyName: !Ref KeyName
       Placement:
         GroupName: !Ref PlacementGroup
-      NetworkInterfaces: !Ref NetworkInterfaces
+      # Could use a macro to generate more if clusters become large or if n_workers != n_controllers
+      NetworkInterfaces: 
+        -  PrivateIpAddress: !If [IsController,'10.0.1.10','10.0.1.20']
+        -  PrivateIpAddress: !If [IsController,'10.0.1.11','10.0.1.21']
+        -  PrivateIpAddress: !If [IsController,'10.0.1.12','10.0.1.22']
       SecurityGroupIds: !Ref SecurityGroups
-      UserData: String
+      UserData: !Sub
+        !Base64 |
+          cat > calculate-launch-index.py <<EOF
+          import urllib.request
+          node_type = ${NodeType}
+          with urllib.request.urlopen('http://169.254.169.254/latest/meta-data/local-ipv4') as res:
+              instance_ipv4:str = response.read()
+          final_octet:str = instance_ipv4.split(".")[-1]
+          launch_index:str = final_octet[-1]
+          print(f'{node_type}-{launch_index}')
+          EOF
+
+          chmod +x claulate-lauunch-index.py
+          name=`python3 calculate-launch-index.py`
 
   NodeGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
@@ -49,6 +69,7 @@ Resources:
       AvailabilityZones: 
         - us-east-1
       PlacementGroup: !Ref PlacementGroup
+      TargetGroupARNs: !Ref TargetGroupArns
       DesiredCapacity: '3'
       LaunchTemplate: 
         LaunchTemplateSpecification

@@ -4,5 +4,10 @@ Description: 3 Node Cluster in a VPC with a Network Load balancer to host our ku
 Parameters:
 
 Resources:
+  PlacementGroup:
+  Type: AWS::EC2::PlacementGroup
+  Description: Cluster placement groups lower inter-node network latency on AWS
+  Properties: 
+    Strategy: cluster
 
 Outputs:
